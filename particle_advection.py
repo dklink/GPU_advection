@@ -1,4 +1,4 @@
-# basically let's make a straightforward cpu powered, single-particle advection
+# straightforward, single-particle advection
 
 import numpy as np
 from Field2D import Field2D
