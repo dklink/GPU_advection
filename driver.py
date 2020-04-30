@@ -9,7 +9,7 @@ field = converge_diverge()
 
 # advect le particle
 advection_time = np.arange(field.time[0], field.time[1], 1)
-nparticles = 10000
+nparticles = 5000
 P = np.zeros([nparticles, len(advection_time), 2])
 
 tic = time.time()
@@ -20,4 +20,4 @@ for i in range(nparticles):
 toc = time.time()
 print('advected {} particles in {} seconds'.format(nparticles, toc-tic))
 
-#plot_advection(P, advection_time, field)
+plot_advection(P, advection_time, field)
