@@ -21,3 +21,6 @@ toc = time.time()
 print('advected {} particles in {} seconds'.format(nparticles, toc-tic))
 
 plot_advection(P, advection_time, field)
+
+a, b, c, \
+    d, e, f = (1, 2, 3, 4, 5, 6)

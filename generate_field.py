@@ -15,4 +15,4 @@ def converge_diverge():
     U[1, :] = X.T
     V[1, :] = Y.T
 
-    return Field2D(time, x, y, U*.1, V*.1)
+    return Field2D(time, x, y, U*.01, V*.01)
