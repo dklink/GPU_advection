@@ -5,13 +5,14 @@ import time
 from Field2D import Field2D
 
 
-def openCL_advect(field: Field2D, p0, num_timesteps, dt, device_index=0):
+def openCL_advect(field: Field2D, p0, num_timesteps, dt, device_index=0, verbose=False):
     """
     :param field: object storing vector field/axes.  Only supports singleton time dimension for now.
     :param p0: initial positions of particles, numpy array shape (num_particles, 2)
     :param num_timesteps: how many timesteps are we advecting
     :param dt: width of timestep, same units as vectors in 'field'
     :param device_index: 0=cpu, 1=integrated GPU, 2=dedicated GPU.  this is on my hardware, not portable.
+    :param verbose: determines whether to print buffer sizes and timing results
     :return: (P, buffer_seconds, kernel_seconds): (numpy array with advection paths, shape (num_particles, num_timesteps, 2),
                                                    time it took to transfer memory to/from device,
                                                    time it took to execute kernel on device)
@@ -38,6 +39,12 @@ def openCL_advect(field: Field2D, p0, num_timesteps, dt, device_index=0):
     h_y0 = p0[:, 1].astype(np.float32)
     h_X_out = np.zeros(num_particles * num_timesteps).astype(np.float32)
     h_Y_out = np.zeros(num_particles * num_timesteps).astype(np.float32)
+
+    if verbose:
+        # print size of buffers
+        for buf_name, buf_value in {'h_field_x': h_field_x, 'h_field_y': h_field_y, 'h_field_U': h_field_U, 'h_field_V': h_field_V,
+                                    'h_x0': h_x0, 'h_y0': h_y0, 'h_X_out': h_X_out, 'h_Y_out': h_Y_out}.items():
+            print(f'{buf_name}: {buf_value.nbytes / 1e6} MB')
 
     buf_time = time.time()
     # Create the input arrays in device memory and copy data from host
@@ -80,5 +87,9 @@ def openCL_advect(field: Field2D, p0, num_timesteps, dt, device_index=0):
     P = np.zeros([num_particles, num_timesteps, 2])
     P[:, :, 0] = h_X_out.reshape([num_particles, num_timesteps])
     P[:, :, 1] = h_Y_out.reshape([num_particles, num_timesteps])
+
+    if verbose:
+        print(f'memory operations took {buf_time} seconds')
+        print(f'kernel execution took {kernel_time} seconds')
 
     return P, buf_time, kernel_time

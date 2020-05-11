@@ -8,12 +8,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def run_opencl(num_particles, num_timesteps, device='amd'):
+def run_opencl(num_particles, num_timesteps, device='amd', verbose=False):
     field = generate_field.converge()
     p0 = np.random.rand(num_particles, 2) * [field.x.max() - field.x.min(), field.y.max() - field.y.min()] + [field.x.min(), field.y.min()]
     dt = 1
     device_index = {'cpu': 0, 'iris': 1, 'amd': 2}[device]
-    P, buffer_seconds, kernel_seconds = openCL_advect(field, p0, num_timesteps, dt, device_index)
+    P, buffer_seconds, kernel_seconds = openCL_advect(field, p0, num_timesteps, dt, device_index, verbose)
 
     return P, buffer_seconds, kernel_seconds
 
@@ -41,4 +41,5 @@ def opencl_particle_dependence():
         plt.legend()
 
 
-opencl_particle_dependence()
+#opencl_particle_dependence()
+run_opencl(int(1e4), 100, 'cpu', verbose=True)
