@@ -5,11 +5,12 @@ import time
 from Field2D import Field2D
 
 
-def openCL_advect(field: Field2D, p0, num_timesteps, dt, device_index=0, verbose=False):
+def openCL_advect(field: Field2D, p0, num_timesteps, save_every, dt, device_index, verbose=False):
     """
     :param field: object storing vector field/axes.  Only supports singleton time dimension for now.
     :param p0: initial positions of particles, numpy array shape (num_particles, 2)
     :param num_timesteps: how many timesteps are we advecting
+    :param save_every: how many timesteps between saving state.  Must divide num_timesteps.
     :param dt: width of timestep, same units as vectors in 'field'
     :param device_index: 0=cpu, 1=integrated GPU, 2=dedicated GPU.  this is on my hardware, not portable.
     :param verbose: determines whether to print buffer sizes and timing results
@@ -18,6 +19,8 @@ def openCL_advect(field: Field2D, p0, num_timesteps, dt, device_index=0, verbose
                                                    time it took to execute kernel on device)
     """
     num_particles = p0.shape[0]
+    assert num_timesteps % save_every == 0, "save_every must divide num_timesteps"
+    out_timesteps = num_timesteps//save_every
 
     # Create a compute context
     # Ask the user to select a platform/device on the CLI
@@ -37,8 +40,8 @@ def openCL_advect(field: Field2D, p0, num_timesteps, dt, device_index=0, verbose
     h_field_V = field.V.flatten().astype(np.float32)
     h_x0 = p0[:, 0].astype(np.float32)
     h_y0 = p0[:, 1].astype(np.float32)
-    h_X_out = np.zeros(num_particles * num_timesteps).astype(np.float32)
-    h_Y_out = np.zeros(num_particles * num_timesteps).astype(np.float32)
+    h_X_out = np.zeros(num_particles * out_timesteps).astype(np.float32)
+    h_Y_out = np.zeros(num_particles * out_timesteps).astype(np.float32)
 
     if verbose:
         # print size of buffers
@@ -63,14 +66,14 @@ def openCL_advect(field: Field2D, p0, num_timesteps, dt, device_index=0, verbose
     # allowing OpenCL runtime to select the work group items for the device
     advect = program.advect
     advect.set_scalar_arg_dtypes(
-            [None, np.uint32, None, np.uint32, None, None, None, None, np.float32, np.uint32, None, None])
+            [None, np.uint32, None, np.uint32, None, None, None, None, np.float32, np.uint32, np.uint32, None, None])
     kernel_time = time.time()
     advect(queue, (num_particles,), None,
            d_field_x, np.uint32(len(h_field_x)),
            d_field_y, np.uint32(len(h_field_y)),
            d_field_U, d_field_V,
            d_x0, d_y0,
-           np.float32(dt), np.uint32(num_timesteps),
+           np.float32(dt), np.uint32(num_timesteps), np.uint32(save_every),
            d_X_out, d_Y_out)
 
     # Wait for the commands to finish before reading back
@@ -84,9 +87,9 @@ def openCL_advect(field: Field2D, p0, num_timesteps, dt, device_index=0, verbose
     buf_time += time.time() - tic
 
     # reshape results and store in numpy array
-    P = np.zeros([num_particles, num_timesteps, 2])
-    P[:, :, 0] = h_X_out.reshape([num_particles, num_timesteps])
-    P[:, :, 1] = h_Y_out.reshape([num_particles, num_timesteps])
+    P = np.zeros([num_particles, out_timesteps, 2])
+    P[:, :, 0] = h_X_out.reshape([num_particles, out_timesteps])
+    P[:, :, 1] = h_Y_out.reshape([num_particles, out_timesteps])
 
     if verbose:
         print(f'memory operations took {buf_time} seconds')
