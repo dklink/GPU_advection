@@ -5,7 +5,8 @@ import time
 from Field2D import Field2D
 
 
-def openCL_advect(field: Field2D, p0, num_timesteps, save_every, dt, device_index, verbose=False):
+def openCL_advect(field: Field2D, p0, num_timesteps, save_every, dt, device_index, verbose=False,
+                  kernel='cartesian'):
     """
     :param field: object storing vector field/axes.  Only supports singleton time dimension for now.
     :param p0: initial positions of particles, numpy array shape (num_particles, 2)
@@ -14,6 +15,7 @@ def openCL_advect(field: Field2D, p0, num_timesteps, save_every, dt, device_inde
     :param dt: width of timestep, same units as vectors in 'field'
     :param device_index: 0=cpu, 1=integrated GPU, 2=dedicated GPU.  this is on my hardware, not portable.
     :param verbose: determines whether to print buffer sizes and timing results
+    :param kernel: select a kernel for advection. Current options: ['cartesian', 'lat_lon']
     :return: (P, buffer_seconds, kernel_seconds): (numpy array with advection paths, shape (num_particles, num_timesteps, 2),
                                                    time it took to transfer memory to/from device,
                                                    time it took to execute kernel on device)
@@ -31,7 +33,12 @@ def openCL_advect(field: Field2D, p0, num_timesteps, save_every, dt, device_inde
 
     # Create the compute program from the source buffer
     # and build it
-    program = cl.Program(context, open('advection_kernel.cl').read()).build()
+    if kernel == 'cartesian':
+        program = cl.Program(context, open('opencl_kernels/cartesian_advection_kernel.cl').read()).build()
+    elif kernel == 'lat_lon':
+        program = cl.Program(context, open('opencl_kernels/lat_lon_advection_kernel.cl').read()).build()
+    else:
+        raise ValueError("Input a valid kernel")
 
     # initialize host vectors
     h_field_x = field.x.astype(np.float32)

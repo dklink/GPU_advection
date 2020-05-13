@@ -1,17 +1,17 @@
 __kernel void advect(
-    __global float* field_x,
+    __global float* field_x,    // lon, Deg E (-180 to 180)
     const unsigned int x_len,
-    __global float* field_y,
+    __global float* field_y,    // lat, Deg N (-90 to 90)
     const unsigned int y_len,
-    __global float* field_U,
-    __global float* field_V,
-    __global float* x0,
-    __global float* y0,
+    __global float* field_U,    // m / s
+    __global float* field_V,    // m / s
+    __global float* x0,         // lon, Deg E (-180 to 180)
+    __global float* y0,         // lat, Deg N (-90 to 90)
     const float dt,
     const unsigned int ntimesteps,
     const unsigned int save_every,
-    __global float* X_out,
-    __global float* Y_out)
+    __global float* X_out,      // lon, Deg E (-180 to 180)
+    __global float* Y_out)      // lat, Deg N (-90 to 90)
 {
     int p_id = get_global_id(0);  // id of particle
     const unsigned int out_timesteps = ntimesteps / save_every;
@@ -47,9 +47,21 @@ __kernel void advect(
         float u = field_U[x_idx*y_len + y_idx];
         float v = field_V[x_idx*y_len + y_idx];
 
-        // advect particle
-        x = x + u * dt;
-        y = y + v * dt;
+        //////////// advect particle
+        // meters displacement
+        float dx_meters = u * dt;
+        float dy_meters = v * dt;
+
+        // convert meters displacement to lat/lon (Reference: American Practical Navigator, Vol II, 1975 Edition, p 5)
+        float rlat = y * M_PI/180;
+        float dx_deg = dx_meters / (111415.13 * cos(rlat) - 94.55 * cos(3 * rlat));
+        float dy_deg = dy_meters / (111132.09 - 556.05 * cos(2 * rlat) + 1.2 * cos(4 * rlat));
+
+        // update
+        x = x + dx_deg;
+        y = y + dy_deg;
+        // keep latitude representation within [-180, 180)
+        x = fmod(x + 180, 360) - 180;
 
         // save if necessary
         if ((t_idx+1) % save_every == 0) {
