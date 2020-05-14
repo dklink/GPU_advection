@@ -1,7 +1,7 @@
 """
 See if we can advect on the earth surface!
 """
-from generate_field import eastward_ocean
+from generate_field import eastward_ocean, equator_converging_ocean
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -10,13 +10,13 @@ from openCL_driver import openCL_advect
 # initialize field
 from plot_advection import plot_advection
 
-field = eastward_ocean()
+field = equator_converging_ocean() + eastward_ocean()
 
 # visualize field
 
 
 # initialize particles
-[X, Y] = np.meshgrid(np.linspace(-180, 180, 20), np.linspace(-85, 85, 10))
+[X, Y] = np.meshgrid(np.linspace(-180, 180, 47), np.linspace(-85, 85, 29))
 p0 = np.array([X.flatten(), Y.flatten()]).T
 
 # visualize field/initialization
@@ -26,10 +26,10 @@ p0 = np.array([X.flatten(), Y.flatten()]).T
 #plt.plot(p0[:, 0], p0[:, 1], '.')
 
 # initialize advection parameters
-num_timesteps = 1000
-save_every = 10
-dt = 3600*24  # one day
-device_index = 0  # cpu
+num_timesteps = 100
+save_every = 1
+dt = 3600*1  # 1 hrs
+device_index = 2  # amd
 P, buf_time, kernel_time = openCL_advect(field, p0, num_timesteps, save_every, dt,
                                          device_index, verbose=True, kernel='lat_lon')
 

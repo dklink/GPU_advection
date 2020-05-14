@@ -38,4 +38,17 @@ def eastward_ocean():
     U = 5 * np.ones([len(time), len(x), len(y)])
     V = np.zeros([len(time), len(x), len(y)])
 
-    return Field2D(time, x, y, U * .01, V * .01)
+    return Field2D(time, x, y, U, V)
+
+
+def equator_converging_ocean():
+    time = np.array([0])  # seconds
+    x = np.linspace(-180, 180, 1000)
+    y = np.linspace(-90, 90, 500)
+    [X, Y] = np.meshgrid(x, y)
+    U = np.zeros([len(time), len(x), len(y)])
+    V = np.zeros([len(time), len(x), len(y)])
+
+    V[0, :] = -np.sign(Y.T) * 5
+
+    return Field2D(time, x, y, U, V)
