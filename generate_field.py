@@ -1,5 +1,6 @@
 import numpy as np
 from Field2D import Field2D
+import xarray as xr
 
 
 def converge_diverge():
@@ -52,3 +53,9 @@ def equator_converging_ocean():
     V[0, :] = -np.sign(Y.T) * 5
 
     return Field2D(time, x, y, U, V)
+
+
+def hycom_surface():
+    ds = xr.open_dataset('./data/hycom_formatted.nc')
+
+    return Field2D(ds.time.data, ds.x.data, ds.y.data, ds.water_u.sel(z=0).data.swapaxes(1, 2), ds.water_v.sel(z=0).data.swapaxes(1, 2))
