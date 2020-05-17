@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import cartopy.crs as ccrs
 
 
 def plot_advection(P, time, field, streamfunc=True):
@@ -16,6 +17,22 @@ def plot_advection(P, time, field, streamfunc=True):
             dot, = ax.plot(P[:, i, 0], P[:, i, 1], '.', markersize=5)
             if streamfunc:
                 ax.streamplot(field.x, field.y, field.U[t_idx].T, field.V[t_idx].T)
+        dot.set_xdata(P[:, i, 0])
+        dot.set_ydata(P[:, i, 1])
+        ax.set_title('t={:.2f}'.format(time[i]))
+        plt.pause(.1)
+
+
+def plot_ocean_advection(P, time):
+    # plot le advection
+    proj = ccrs.PlateCarree()
+    fig = plt.figure(figsize=[14, 8])
+    ax = plt.axes(projection=proj)
+    ax.coastlines()
+
+    dot, = ax.plot(P[:, 0, 0], P[:, 0, 1], '.', markersize=5, transform=proj)
+
+    for i in range(len(time)):
         dot.set_xdata(P[:, i, 0])
         dot.set_ydata(P[:, i, 1])
         ax.set_title('t={:.2f}'.format(time[i]))

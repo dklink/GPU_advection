@@ -1,12 +1,12 @@
 """
 See if we can advect on the earth surface!
 """
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
 from generate_field import eastward_ocean, equator_converging_ocean, hycom_surface
 from openCL_driver import openCL_advect
-from plot_advection import plot_advection
+from plot_advection import plot_advection, plot_ocean_advection
 
 
 def test_hycom():
@@ -27,7 +27,8 @@ def test_hycom():
     P, buf_time, kernel_time = openCL_advect(field, p0, num_timesteps, save_every, dt,
                                              device_index, verbose=True, kernel='lat_lon')
 
-    plot_advection(P, np.arange(num_timesteps, step=save_every), field, streamfunc=False)
+    plot_ocean_advection(P, np.arange(num_timesteps, step=save_every))
+    return P
 
 
 def test_ocean():
@@ -47,4 +48,15 @@ def test_ocean():
 
     plot_advection(P, np.arange(num_timesteps, step=save_every), field)
 
-test_hycom()
+
+P = test_hycom()
+'''plt.figure()
+min, max = np.nanmin(P[:, :, 0]), np.nanmax(P[:, :, 0])
+for i in range(364):
+    plt.clf()
+    plt.hist(P[:, i, 0])
+    plt.xlim([min, max])
+    plt.ylim([0, 500])
+    plt.title(i)
+    plt.pause(.001)
+'''

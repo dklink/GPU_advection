@@ -60,8 +60,10 @@ __kernel void advect(
         // update
         x = x + dx_deg;
         y = y + dy_deg;
-        // keep latitude representation within [-180, 180)
-        x = fmod(x + 180, 360) - 180;
+        // keep longitude representation within [-180, 180)
+        // builtin fmod(a, b) is a - b*trunc(a/b), which behaves incorrectly for negative numbers.
+        //            so we use  a - b*floor(a/b) instead
+        x = ((x+180) - 360*floor((x+180)/360)) - 180;
 
         // save if necessary
         if ((t_idx+1) % save_every == 0) {
