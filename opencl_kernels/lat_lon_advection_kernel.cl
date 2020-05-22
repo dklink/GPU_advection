@@ -60,6 +60,14 @@ __kernel void advect(
         // update
         x = x + dx_deg;
         y = y + dy_deg;
+        // deal with advecting over the poles
+        if (y > 90) {
+            y = 180 - y;
+            x = x + 180;
+        } else if (y < -90) {
+            y = -180 - y;
+            x = x + 180;
+        }
         // keep longitude representation within [-180, 180)
         // builtin fmod(a, b) is a - b*trunc(a/b), which behaves incorrectly for negative numbers.
         //            so we use  a - b*floor(a/b) instead

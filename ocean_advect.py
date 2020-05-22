@@ -26,7 +26,7 @@ def test_hycom():
 
     # initialize advection parameters
     num_timesteps = 2 * 7 * 52 * 1  # 1 years
-    save_every = 14  # 1 week
+    save_every = 7 * 2  # 2 weeks
     dt = 3600 * 12  # 12 hrs
     device_index = 2  # amd
     P, buf_time, kernel_time = openCL_advect(field, p0, num_timesteps, save_every, dt,
