@@ -13,11 +13,16 @@ def test_hycom():
     field = hycom_surface()
     field.V = field.V[0]  # just one timestep
     field.U = field.U[0]
+    land = np.isnan(field.U)
+    field.U[land] = 0
+    field.V[land] = 0
     field.time = np.zeros(1)
 
     # initialize particles
-    [X, Y] = np.meshgrid(np.linspace(-180, 180, 100), np.linspace(-85, 85, 50))
-    p0 = np.array([X.flatten(), Y.flatten()]).T
+    [X, Y] = np.meshgrid(field.x, field.y)
+    ocean_points = np.array([X[~land.T], Y[~land.T]]).T
+    num_particles = 5000
+    p0 = ocean_points[np.random.choice(np.arange(len(ocean_points)), size=num_particles, replace=False)]
 
     # initialize advection parameters
     num_timesteps = 2 * 7 * 52 * 1  # 1 years
@@ -26,8 +31,9 @@ def test_hycom():
     device_index = 2  # amd
     P, buf_time, kernel_time = openCL_advect(field, p0, num_timesteps, save_every, dt,
                                              device_index, verbose=True, kernel='lat_lon')
+    P = np.concatenate([p0[:, np.newaxis], P], axis=1)
 
-    plot_ocean_advection(P, np.arange(num_timesteps, step=save_every))
+    plot_ocean_advection(P, np.arange(num_timesteps, step=save_every)/2)
     return P
 
 

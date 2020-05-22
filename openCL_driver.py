@@ -99,7 +99,7 @@ def openCL_advect(field: Field2D, p0, num_timesteps, save_every, dt, device_inde
     P[:, :, 1] = h_Y_out.reshape([num_particles, out_timesteps])
 
     if verbose:
-        print(f'memory operations took {buf_time} seconds')
-        print(f'kernel execution took {kernel_time} seconds')
+        print(f'memory operations took {buf_time: .3f} seconds')
+        print(f'kernel execution took  {kernel_time: .3f} seconds')
 
     return P, buf_time, kernel_time

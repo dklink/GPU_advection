@@ -30,10 +30,10 @@ def plot_ocean_advection(P, time):
     ax = plt.axes(projection=proj)
     ax.coastlines()
 
-    dot, = ax.plot(P[:, 0, 0], P[:, 0, 1], '.', markersize=5, transform=proj)
+    dot, = ax.plot(P[:, 0, 0], P[:, 0, 1], '.')  # transform=ccrs.Geodetic())
 
     for i in range(len(time)):
         dot.set_xdata(P[:, i, 0])
         dot.set_ydata(P[:, i, 1])
         ax.set_title('t={:.2f}'.format(time[i]))
-        plt.pause(.1)
+        plt.pause(.01)
