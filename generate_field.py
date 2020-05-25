@@ -5,7 +5,7 @@ import xarray as xr
 
 def converge_diverge():
     # generate a field
-    time = np.array([0, 50])  # seconds
+    time = np.array([0, 100])  # seconds
     x = np.linspace(-100, 100, 100)
     y = np.linspace(-50, 50, 50)
     [X, Y] = np.meshgrid(x, y)
@@ -53,6 +53,15 @@ def equator_converging_ocean():
     V[0, :] = -np.sign(Y.T) * 5
 
     return Field2D(time, x, y, U, V)
+
+
+def multiple_timestep_ocean():
+    field1 = eastward_ocean()
+    field2 = equator_converging_ocean()
+    time = np.array([0, 100*3600])  # 0 hrs, 100 hrs
+    U = np.concatenate([field1.U, field2.U], axis=0)
+    V = np.concatenate([field1.V, field2.V], axis=0)
+    return Field2D(time, field1.x, field1.y, U, V)
 
 
 def hycom_surface():

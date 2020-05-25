@@ -4,13 +4,13 @@ See if we can advect on the earth surface!
 import numpy as np
 import matplotlib.pyplot as plt
 
-from generate_field import eastward_ocean, equator_converging_ocean, hycom_surface
+import generate_field
 from openCL_driver import openCL_advect
 from plot_advection import plot_advection, plot_ocean_advection
 
 
 def test_hycom():
-    field = hycom_surface()
+    field = generate_field.hycom_surface()
     field.V = field.V[0]  # just one timestep
     field.U = field.U[0]
     land = np.isnan(field.U)
@@ -38,7 +38,7 @@ def test_hycom():
 
 
 def test_ocean():
-    field = equator_converging_ocean() + eastward_ocean()  # or just one of them
+    field = generate_field.multiple_timestep_ocean()
 
     # initialize particles
     [X, Y] = np.meshgrid(np.linspace(-180, 180, 47), np.linspace(-85, 85, 29))
@@ -52,10 +52,12 @@ def test_ocean():
     P, buf_time, kernel_time = openCL_advect(field, p0, num_timesteps, save_every, dt,
                                              device_index, verbose=True, kernel='lat_lon')
 
-    plot_advection(P, np.arange(num_timesteps, step=save_every), field)
+    plot_advection(P, dt*np.arange(num_timesteps, step=save_every), field)
+    return P
 
+#P = test_hycom()
+P = test_ocean()
 
-P = test_hycom()
 '''plt.figure()
 min, max = np.nanmin(P[:, :, 0]), np.nanmax(P[:, :, 0])
 for i in range(364):

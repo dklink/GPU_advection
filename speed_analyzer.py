@@ -44,7 +44,7 @@ def opencl_particle_dependence():
         plt.legend()
 
 
-opencl_particle_dependence()
+#opencl_particle_dependence()
 
 """
 num_timesteps = 100
