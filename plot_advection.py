@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import matplotlib.pyplot as plt
 import numpy as np
 import cartopy.crs as ccrs
@@ -35,6 +37,6 @@ def plot_ocean_advection(P, time):
     for i in range(len(time)):
         dot.set_xdata(P[:, i, 0])
         dot.set_ydata(P[:, i, 1])
-        ax.set_title('t={:.2f}'.format(time[i]))
+        ax.set_title(datetime.utcfromtimestamp(time[i]))
         ax.set_ylim(-90, 90)
         plt.pause(.01)

@@ -5,11 +5,12 @@ import time
 from Field2D import Field2D
 
 
-def openCL_advect(field: Field2D, p0, num_timesteps, save_every, dt, device_index, verbose=False,
+def openCL_advect(field: Field2D, p0, t0, num_timesteps, save_every, dt, device_index, verbose=False,
                   kernel='cartesian'):
     """
     :param field: object storing vector field/axes.
     :param p0: initial positions of particles, numpy array shape (num_particles, 2)
+    :param t0: start time (seconds since 2000-01-01T00:00:00)
     :param num_timesteps: how many timesteps are we advecting
     :param save_every: how many timesteps between saving state.  Must divide num_timesteps.
     :param dt: width of timestep, same units as vectors in 'field'
@@ -23,7 +24,6 @@ def openCL_advect(field: Field2D, p0, num_timesteps, save_every, dt, device_inde
     num_particles = p0.shape[0]
     assert num_timesteps % save_every == 0, "save_every must divide num_timesteps"
     out_timesteps = num_timesteps//save_every
-    t0 = 0  # start time
     # Create a compute context
     # Ask the user to select a platform/device on the CLI
     context = cl.create_some_context(answers=['1', str(device_index)])

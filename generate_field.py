@@ -64,7 +64,22 @@ def multiple_timestep_ocean():
     return Field2D(time, field1.x, field1.y, U, V)
 
 
-def hycom_surface():
-    ds = xr.open_dataset('./data/hycom_formatted.nc')
+def hycom_surface(months):
+    time = []
+    x = []
+    y = []
+    U = []
+    V = []
+    for month in months:
+        ds = xr.open_dataset(f'./data/uv_2015_{month}_3d.formatted.nc')
+        x.append(ds.x.data)
+        y.append(ds.y.data)
+        time.append(ds.time.data)
+        U.append(ds.water_u.sel(z=0).data.swapaxes(1, 2))
+        V.append(ds.water_v.sel(z=0).data.swapaxes(1, 2))
 
-    return Field2D(ds.time.data, ds.x.data, ds.y.data, ds.water_u.sel(z=0).data.swapaxes(1, 2), ds.water_v.sel(z=0).data.swapaxes(1, 2))
+    assert np.all(x[0] == x[i] for i in range(len(x)))
+    assert np.all(y[0] == y[i] for i in range(len(x)))
+
+    return Field2D(time=np.concatenate(time), x=x[0], y=y[0],
+                   U=np.concatenate(U, axis=0), V=np.concatenate(V, axis=0))

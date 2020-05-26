@@ -1,6 +1,8 @@
 """
 See if we can advect on the earth surface!
 """
+from datetime import timedelta
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -10,13 +12,12 @@ from plot_advection import plot_advection, plot_ocean_advection
 
 
 def test_hycom():
-    field = generate_field.hycom_surface()
-    field.V = field.V[0]  # just one timestep
-    field.U = field.U[0]
-    land = np.isnan(field.U)
-    field.U[land] = 0
-    field.V[land] = 0
-    field.time = np.zeros(1)
+    field = generate_field.hycom_surface(months=list(range(1, 13))*2)
+    land = np.isnan(field.U[0])
+    field.U[:, land] = 0
+    field.V[:, land] = 0
+
+    field.time = (field.time - np.datetime64('1970-01-01T00:00:00')) / np.timedelta64(1, 's')  # convert from numpy datetime to seconds since epoch
 
     # initialize particles
     [X, Y] = np.meshgrid(field.x, field.y)
@@ -25,15 +26,20 @@ def test_hycom():
     p0 = ocean_points[np.random.choice(np.arange(len(ocean_points)), size=num_particles, replace=False)]
 
     # initialize advection parameters
-    num_timesteps = 2 * 7 * 52 * 1  # 1 years
-    save_every = 7 * 2  # 2 weeks
-    dt = 3600 * 12  # 12 hrs
+    t_start = field.time[0]
+    t_end = field.time[-1]
+    num_timesteps = 2*365*10
+    time = np.linspace(t_start, t_end, num_timesteps)
+    dt = time[1]-time[0]
+    print(f'dt: {dt/3600: .1f} hours')
+    save_every = 20
     device_index = 2  # amd
-    P, buf_time, kernel_time = openCL_advect(field, p0, num_timesteps, save_every, dt,
+    P, buf_time, kernel_time = openCL_advect(field, p0, t_start, num_timesteps, save_every, dt,
                                              device_index, verbose=True, kernel='lat_lon')
     P = np.concatenate([p0[:, np.newaxis], P], axis=1)
 
-    plot_ocean_advection(P, np.arange(num_timesteps, step=save_every)/2)
+    field.x = np.linspace(min(field.x), max(field.x), len(field.x))
+    plot_ocean_advection(P, np.linspace(t_start, t_end+(t_end-t_start), num_timesteps//save_every))
     return P
 
 
@@ -49,14 +55,15 @@ def test_ocean():
     save_every = 1
     dt = 3600*1  # 1 hrs
     device_index = 2  # amd
-    P, buf_time, kernel_time = openCL_advect(field, p0, num_timesteps, save_every, dt,
+    t0 = 0
+    P, buf_time, kernel_time = openCL_advect(field, p0, t0, num_timesteps, save_every, dt,
                                              device_index, verbose=True, kernel='lat_lon')
 
     plot_advection(P, dt*np.arange(num_timesteps, step=save_every), field)
     return P
 
-#P = test_hycom()
-P = test_ocean()
+P = test_hycom()
+#P = test_ocean()
 
 '''plt.figure()
 min, max = np.nanmin(P[:, :, 0]), np.nanmax(P[:, :, 0])
