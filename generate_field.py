@@ -83,3 +83,35 @@ def hycom_surface(months):
 
     return Field2D(time=np.concatenate(time), x=x[0], y=y[0],
                    U=np.concatenate(U, axis=0), V=np.concatenate(V, axis=0))
+
+
+def electric_dipole(nx=100):
+    """electric field generation yoinked from https://scipython.com/blog/visualizing-a-vector-field-with-matplotlib/"""
+
+    def E(q, r0, x, y):
+        """Return the electric field vector E=(Ex,Ey) due to charge q at r0."""
+        den = np.hypot(x - r0[0], y - r0[1]) ** 3
+        return q * (x - r0[0]) / den, q * (y - r0[1]) / den
+
+    # Grid of x, y points
+    ny = nx
+    x = np.linspace(-2, 2, nx)
+    y = np.linspace(-2, 2, ny)
+    X, Y = np.meshgrid(x, y)
+
+    # Create a multipole with nq charges of alternating sign, equally spaced
+    # on the unit circle.
+    nq = 2
+    charges = []
+    for i in range(nq):
+        q = i % 2 * 2 - 1
+        charges.append((q, (np.cos(2 * np.pi * i / nq), np.sin(2 * np.pi * i / nq))))
+
+    # Electric field vector, E=(Ex, Ey), as separate components
+    Ex, Ey = np.zeros((ny, nx)), np.zeros((ny, nx))
+    for charge in charges:
+        ex, ey = E(*charge, x=X, y=Y)
+        Ex += ex
+        Ey += ey
+
+    return Field2D(x=x, y=y, time=np.array([0]), U=Ex.T[np.newaxis], V=Ey.T[np.newaxis])

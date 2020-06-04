@@ -12,6 +12,7 @@ device_index = 0
 num_timesteps = 100
 save_every = 1
 verbose = True
+t0 = field.time[0]
 
-P, buffer_seconds, kernel_seconds = openCL_advect(field, p0, num_timesteps, save_every, dt, device_index, verbose)
+P, buffer_seconds, kernel_seconds = openCL_advect(field, p0, t0, num_timesteps, save_every, dt, device_index, verbose)
 plot_advection(P, np.arange(num_timesteps), field)
