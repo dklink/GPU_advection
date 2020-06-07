@@ -115,3 +115,15 @@ def electric_dipole(nx=100):
         Ey += ey
 
     return Field2D(x=x, y=y, time=np.array([0]), U=Ex.T[np.newaxis], V=Ey.T[np.newaxis])
+
+
+def concentric_circles(nx=100):
+    x = np.linspace(-1, 1, nx)
+    y = np.linspace(-1, 1, nx)
+
+    X, Y = np.meshgrid(x, y)
+    mag = np.sqrt(X**2 + Y**2)
+    U = np.divide(-Y, mag, out=np.zeros_like(X), where=mag != 0)
+    V = np.divide(X, mag, out=np.zeros_like(X), where=mag != 0)
+
+    return Field2D(x=x, y=y, time=np.array([0]), U=U.T[np.newaxis], V=V.T[np.newaxis])

@@ -1,16 +1,15 @@
 """
 Here we test the cartesian and gaussian (lat/lon) kernels against well-understood results
 """
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation, writers
+from matplotlib import gridspec
+from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Circle
 
 import generate_field
 from Field2D import Field2D
 from openCL_driver import openCL_advect
-from plot_advection import plot_advection
 
 
 def test_cartesian_electric_dipole():
@@ -61,6 +60,57 @@ def test_cartesian_electric_dipole():
     ani = FuncAnimation(fig, update, frames=len(time))
     plt.show()
     #print('saving animation...')
-    #ani.save('electric_dipole.mp4', fps=30)
+    #ani.save('plots/electric_dipole.mp4', fps=30)
 
-test_cartesian_electric_dipole()
+
+def test_cartesian_orbit():
+
+    def advect_circles(dt, field):
+        # advect particles
+        p0 = np.array([[.4, 0]])
+        num_timesteps = int(10/dt)
+        save_every = 1
+
+        P, buffer_seconds, kernel_seconds = openCL_advect(field=field, p0=p0, t0=0, num_timesteps=num_timesteps,
+                                                          save_every=save_every, dt=dt, device_index=0, verbose=False)
+        return P[0, :, 0], P[0, :, 1]
+
+    gs = gridspec.GridSpec(3, 3)
+    fig = plt.figure(figsize=(8, 8))
+    axes = [plt.subplot(gs[i//3, i%3]) for i in range(9)]
+    axes = iter(axes)
+    dts = [.1, .01, .001]
+    nxs = [5, 10, 30]
+    for i, dt in enumerate(dts):
+        for j, nx in enumerate(nxs):
+            field = generate_field.concentric_circles(nx=nx)
+            x, y = advect_circles(dt, field)
+            ax = next(axes)
+            ax.set_aspect(1)
+            ax.quiver(field.x, field.y, field.U[0].T, field.V[0].T)
+            ax.plot(x, y, '-')
+            ax.plot(x[0], y[0], 'o', color='green', label='Initial Position')
+            ax.plot(x[-1], y[-1], 's', color='red', label='Final Position')
+            ax.set_xlim([min(field.x)*1.05, max(field.x)*1.05])
+            ax.set_ylim([min(field.y)*1.05, max(field.y)*1.05])
+            ax.set_xticks([-1, 0, 1])
+            ax.set_yticks([-1, 0, 1])
+            if j == 0:
+                ax.set_ylabel(f'dt = {dt}', fontsize=11)
+            else:
+                ax.set_yticks([])
+            if i == 2:
+                ax.set_xlabel(f'{nx}x{nx}', fontsize=11)
+            else:
+                ax.set_xticks([])
+
+    # Set big x/y labels
+    fig.text(0.51, 0.025, 'Field Resolution', ha='center', va='center', fontsize=12)
+    fig.text(0.025, 0.5, 'Temporal Resolution', ha='center', va='center', rotation='vertical', fontsize=12)
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(handles, labels, loc=(.8, .9))
+    fig.text(.52, .928, 'Effect of Resolution on Model Accuracy', ha='center', va='center', fontsize=14)
+    plt.show()
+    #plt.savefig('plots/resolution_v_accuracy.png', dpi=500)
+
+test_cartesian_orbit()
