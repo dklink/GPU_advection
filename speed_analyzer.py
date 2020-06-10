@@ -13,9 +13,10 @@ from plot_advection import plot_advection
 def run_opencl(num_particles, num_timesteps, save_every=1, device='amd', verbose=False):
     field = generate_field.converge()
     p0 = np.random.rand(num_particles, 2) * [field.x.max() - field.x.min(), field.y.max() - field.y.min()] + [field.x.min(), field.y.min()]
+    t0 = 0
     dt = 1
     device_index = {'cpu': 0, 'iris': 1, 'amd': 2}[device]
-    P, buffer_seconds, kernel_seconds = openCL_advect(field, p0, num_timesteps, save_every, dt, device_index, verbose)
+    P, buffer_seconds, kernel_seconds = openCL_advect(field, p0, t0, num_timesteps, save_every, dt, device_index, verbose)
 
     return P, buffer_seconds, kernel_seconds
 
@@ -37,14 +38,15 @@ def opencl_particle_dependence():
         color = next(ax._get_lines.prop_cycler)['color']
         plt.plot(num_particles, buf_s[i], '--', color=color, label=f'memory ({devices[i]})')
         plt.plot(num_particles, kern_s[i], '-', color=color, label=f'kernel ({devices[i]})')
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.xlabel('number of particles')
-        plt.ylabel('time (s)')
-        plt.legend()
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('number of particles')
+    plt.ylabel('time (s)')
+    plt.legend()
+    plt.savefig('plots/particles_vs_speed.png', dpi=500)
 
 
-#opencl_particle_dependence()
+opencl_particle_dependence()
 
 """
 num_timesteps = 100

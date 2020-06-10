@@ -1,8 +1,11 @@
 """
 Here we test the cartesian and gaussian (lat/lon) kernels against well-understood results
 """
+from datetime import datetime
+
 import numpy as np
 import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
 from matplotlib import gridspec
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Circle
@@ -113,4 +116,53 @@ def test_cartesian_orbit():
     plt.show()
     #plt.savefig('plots/resolution_v_accuracy.png', dpi=500)
 
-test_cartesian_orbit()
+
+def test_hycom_advection():
+    print("Loading Data...")
+    field = generate_field.hycom_surface(months=list(range(1, 13)))
+    field.x = np.linspace(min(field.x), max(field.x), len(field.x))
+    land = np.isnan(field.U[0])
+    field.U[:, land] = 0
+    field.V[:, land] = 0
+
+    field.time = (field.time - np.datetime64('1970-01-01T00:00:00')) / np.timedelta64(1, 's')  # convert from numpy datetime to seconds since epoch
+
+    # initialize particles
+    [X, Y] = np.meshgrid(field.x, field.y)
+    ocean_points = np.array([X[~land.T], Y[~land.T]]).T
+    num_particles = 5000
+    p0 = ocean_points[np.random.choice(np.arange(len(ocean_points)), size=num_particles, replace=False)]
+
+    # initialize advection parameters
+    t_start = field.time[0]
+    t_end = field.time[-1]
+    num_timesteps = 365*24
+    time = np.linspace(t_start, t_end, num_timesteps)
+    dt = time[1]-time[0]
+    print(f'dt: {dt/3600: .1f} hours')
+    save_every = 24
+    device_index = 2  # amd
+    P, buf_time, kernel_time = openCL_advect(field, p0, t_start, num_timesteps, save_every, dt,
+                                             device_index, verbose=True, kernel='lat_lon')
+    P = np.concatenate([p0[:, np.newaxis], P], axis=1)
+    out_time = time[0] + dt*np.arange(num_timesteps+1, step=save_every)
+
+    # make an animation
+    proj = ccrs.PlateCarree()
+    fig = plt.figure(figsize=[14, 8])
+    ax = plt.axes(projection=proj)
+    ax.coastlines()
+
+    dot, = ax.plot([], [], '.')
+
+    def update(i):
+        dot.set_xdata(P[:, i, 0])
+        dot.set_ydata(P[:, i, 1])
+        ax.set_title(datetime.utcfromtimestamp(out_time[i]))
+        ax.set_ylim(-90, 90)
+        return dot,
+
+    ani = FuncAnimation(fig, update, frames=len(out_time))
+    #plt.show()
+    print('saving animation...')
+    ani.save('plots/hycom_2015.mp4', fps=30)
