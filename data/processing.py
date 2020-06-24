@@ -2,7 +2,8 @@ import xarray as xr
 from tqdm import tqdm
 import glob
 
-def process_hycom_file(path='uv_2015_1_3d.nc'):
+
+def process_hycom_file(path='uv_2015_1_3d.nc', out_dir='.'):
     """loads hycom data, assigns coords, changes the longitude from 0,360 to -180,180"""
     ds = xr.open_dataset(path)
     ds['lon'] = ((ds.lon+180) % 360) - 180
@@ -10,10 +11,10 @@ def process_hycom_file(path='uv_2015_1_3d.nc'):
     ds = ds.roll(x=len(ds.x) // 2, roll_coords=True)
 
     filename = path.split('/')[-1]
-    ds.to_netcdf(f'{filename[:-3]}.formatted{filename[-3:]}')
+    ds.to_netcdf(f'{out_dir}/{filename[:-3]}.formatted{filename[-3:]}')
     return ds
 
 
-def process_all_hycom_files():
-    for path in tqdm(glob.glob('../../trashtracker/utils/get hycom/nc/uv_2015*.nc')):
+def process_all_hycom_files(filenames='../../trashtracker/utils/get hycom/nc/uv_2015*.nc'):
+    for path in tqdm(glob.glob(filenames)):
         process_hycom_file(path)
