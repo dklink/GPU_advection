@@ -23,17 +23,20 @@ def run_opencl(num_particles, num_timesteps, save_every=1, device='amd', verbose
 
 def opencl_particle_dependence():
     num_particles = np.uint32(2**np.arange(0, 24, 2))
+    num_timesteps = 100
+    save_every = 50
     devices = ['cpu', 'amd']  # iris pukes after 1e6 particles
     buf_s = np.zeros([len(devices), len(num_particles)])
     kern_s = np.zeros([len(devices), len(num_particles)])
     for i, device in enumerate(devices):
         for k, particles in enumerate(num_particles):
             print(f'calculating {particles} particles on {device}')
-            P, buffer_seconds, kernel_seconds = run_opencl(particles, 100, 50, device=device)
+            P, buffer_seconds, kernel_seconds = run_opencl(particles, num_timesteps, save_every, device=device)
             buf_s[i, k] = buffer_seconds
             kern_s[i, k] = kernel_seconds
 
-    fig, ax = plt.subplots()
+    plt.figure(figsize=[11, 7])
+    ax = plt.gca()
     for i in range(len(devices)):
         color = next(ax._get_lines.prop_cycler)['color']
         plt.plot(num_particles, buf_s[i], '--', color=color, label=f'memory ({devices[i]})')
@@ -43,15 +46,39 @@ def opencl_particle_dependence():
     plt.xlabel('number of particles')
     plt.ylabel('time (s)')
     plt.legend()
+    plt.title(f"num_timesteps={num_timesteps}, save_every={save_every}")
     plt.savefig('plots/particles_vs_speed.png', dpi=500)
 
 
-opencl_particle_dependence()
+def opencl_timestep_dependence():
+    num_timesteps = np.uint32(2**np.arange(1, 11, 1))
+    num_particles = 100000
+    save_every = 1
+    devices = ['cpu', 'amd']  # iris pukes after 1e6 particles
+    buf_s = np.zeros([len(devices), len(num_timesteps)])
+    kern_s = np.zeros([len(devices), len(num_timesteps)])
+    for i, device in enumerate(devices):
+        for k, nt in enumerate(num_timesteps):
+            print(f'calculating {nt} timesteps on {device}')
+            P, buffer_seconds, kernel_seconds = run_opencl(num_particles=num_particles,
+                                                           num_timesteps=nt,
+                                                           save_every=1,
+                                                           device=device,
+                                                           verbose=False)
+            buf_s[i, k] = buffer_seconds
+            kern_s[i, k] = kernel_seconds
 
-"""
-num_timesteps = 100
-save_every = 50
-time = np.arange(num_timesteps, step=save_every)
-P, _, _ = run_opencl(num_particles=int(1e7), num_timesteps=num_timesteps, save_every=save_every, device='iris', verbose=True)
-#plot_advection(P, time, generate_field.converge())
-"""
+    fig, ax = plt.subplots(figsize=[11, 7])
+    for i in range(len(devices)):
+        color = next(ax._get_lines.prop_cycler)['color']
+        plt.plot(num_timesteps, buf_s[i], '--', color=color, label=f'memory ({devices[i]})')
+        plt.plot(num_timesteps, kern_s[i], '-', color=color, label=f'kernel ({devices[i]})')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('number of timesteps')
+    plt.ylabel('time (s)')
+    plt.legend()
+    plt.title(f"num_particles={num_particles}, save_every={save_every}")
+    plt.savefig('plots/timesteps_vs_speed.png', dpi=500)
+
+opencl_timestep_dependence()
